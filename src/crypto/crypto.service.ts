@@ -3,40 +3,54 @@ import axios from 'axios';
 
 @Injectable()
 export class CryptoService {
-  private readonly API_URL = process.env.API_URL;
-  private readonly API_KEY = process.env.API_KEY;
+  private readonly CMC_API_URL = process.env.API_URL;
+  private readonly CMC_API_KEY = process.env.API_KEY;
 
-  async getBlockchainAssets(): Promise<any> {
-    try {
-      const response = await axios.get(
-        `${this.API_URL}/market-data/metadata/assets`,
-        {
-          headers: { 'X-API-Key': this.API_KEY },
-        },
-      );
-      return response.data;
-    } catch (error) {
-      throw new HttpException(
-        error.response?.data || 'API Error',
-        HttpStatus.BAD_REQUEST,
-      );
+  constructor() {
+    if (!this.CMC_API_KEY) {
+      throw new Error('❌ CMC_API_KEY chưa được cấu hình trong .env');
     }
   }
 
-  async getAssetDetailsBySymbol(assetSymbol: string): Promise<any> {
+  async getAllCrypto(): Promise<any> {
     try {
       const response = await axios.get(
-        `${this.API_URL}/market-data/assets/by-symbol/${assetSymbol}`,
+        `${this.CMC_API_URL}cryptocurrency/listings/latest`,
         {
-          headers: { 'X-API-Key': this.API_KEY },
+          headers: { 'X-CMC_PRO_API_KEY': this.CMC_API_KEY },
         },
       );
       return response.data;
     } catch (error) {
-      throw new HttpException(
-        error.response?.data || 'API Error',
-        HttpStatus.BAD_REQUEST,
-      );
+      this.handleApiError(error);
     }
+  }
+
+  async getCryptoBySymbol(symbol: string): Promise<any> {
+    try {
+      const response = await axios.get(
+        `${this.CMC_API_URL}cryptocurrency/quotes/latest?symbol=${symbol}`,
+        {
+          headers: { 'X-CMC_PRO_API_KEY': this.CMC_API_KEY },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  // Xử lý lỗi API
+  private handleApiError(error: any): never {
+    const errorMessage =
+      error.response?.data?.status?.error_message || error.message || 'API Error';
+    throw new HttpException(
+      {
+        status: error.response?.status || HttpStatus.BAD_REQUEST,
+        message: errorMessage,
+        details: error.response?.data || null,
+      },
+      error.response?.status || HttpStatus.BAD_REQUEST,
+    );
   }
 }

@@ -42,7 +42,7 @@ export class AuthMiddleware implements NestMiddleware {
       const decoded: any = jwt.verify(token, keyStore.publicKey);
       console.log('Decoded Token:', decoded);
 
-      if (tokenType === 'refresh' && decoded.user._id !== userId) {
+      if (tokenType === 'refresh' && decoded.sub !== userId) {
         throw new ForbiddenException('User ID không trùng khớp');
       }
 

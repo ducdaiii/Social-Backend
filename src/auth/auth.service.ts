@@ -26,7 +26,7 @@ export class AuthService {
 
     // Kiểm tra nếu email đã tồn tại
     if (await this.userModel.findOne({ email })) {
-      throw new UnauthorizedException('Email đã tồn tại');
+      throw new UnauthorizedException('Email already exists');
     }
 
     // Mã hóa mật khẩu
@@ -36,6 +36,7 @@ export class AuthService {
     // Tạo người dùng
     const user = new this.userModel({ email, password: hashedPassword, username });
     await user.save();
+
 
     // 🔹 Tạo và lưu khóa RSA
     const { publicKey, privateKey } = this.generateRSAKeys();
@@ -53,6 +54,7 @@ export class AuthService {
     // Kiểm tra người dùng có tồn tại
     const user = await this.userModel.findOne({ email });
     if (!user) throw new UnauthorizedException('Email không tồn tại');
+
 
     // Kiểm tra mật khẩu
     if (!(await bcrypt.compare(password, user.password))) {
@@ -135,5 +137,12 @@ export class AuthService {
     });
 
     return { publicKey, privateKey };
+  }
+
+  async invalidateRefreshToken(refreshToken: string) {
+    await this.userModel.updateOne(
+      { refreshToken },
+      { $unset: { refreshToken: 1 } } 
+    );
   }
 }

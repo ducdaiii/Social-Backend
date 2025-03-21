@@ -26,12 +26,4 @@ export class AuthController {
       throw new HttpException('Refresh token không hợp lệ', HttpStatus.UNAUTHORIZED);
     }
   }
-
-  @Post('logout')
-  async logout(@Res() res: Response) {
-    res.clearCookie('access_token');  
-    res.clearCookie('refresh_token'); 
-
-    res.status(HttpStatus.OK).send({ message: 'Logout thành công' });
-  }
 }

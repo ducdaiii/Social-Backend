@@ -8,13 +8,6 @@ import { EditGuard } from 'src/guard/edit.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // Tạo người dùng mới
-  @Post()
-  @UseGuards(RolesGuard)
-  async create(@Body() createUserDto: any): Promise<User> {
-    return this.userService.create(createUserDto);
-  }
-
   // Lấy tất cả người dùng
   @Get()
   async findAll(): Promise<User[]> {

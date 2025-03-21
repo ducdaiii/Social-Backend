@@ -8,16 +8,6 @@ import * as bcrypt from 'bcrypt';
 export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  // Tạo người dùng mới
-  async create(createUserDto: any): Promise<User> {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const createdUser = new this.userModel({
-      ...createUserDto,
-      password: hashedPassword,
-    });
-    return createdUser.save();
-  }
-
   // Tìm tất cả người dùng
   async findAll(): Promise<User[]> {
     return this.userModel.find().exec();

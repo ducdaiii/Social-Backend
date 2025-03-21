@@ -36,7 +36,7 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(EmptyDataMiddleware, AuthMiddleware)  
-      .exclude('auth/login', 'auth/register', 'crypto/asset-info/:assetSymbol', 'crypto/metadata-info')  
+      .exclude('auth/login', 'auth/register', "auth/logout", 'crypto/all', 'crypto/symbol')  
       .forRoutes('*');     
   }
 }
