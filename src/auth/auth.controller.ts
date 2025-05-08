@@ -1,11 +1,33 @@
-import { Controller, Post, Body, HttpException, HttpStatus, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpException,
+  HttpStatus,
+  Res,
+  Get,
+  UseGuards,
+  Req,
+  Query,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../user/dto/user.dto';
-import { Response } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+  }
+
+  @Get("google/callback")
+  async googleAuthRedirect(@Query("code") code: string) {
+    const tokens = await this.authService.exchangeGoogleCodeForTokens(code);
+    return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
+  }
 
   @Post('register')
   async register(@Body() registerDto: CreateUserDto) {
@@ -23,7 +45,10 @@ export class AuthController {
     try {
       return this.authService.refreshTokens(refreshToken);
     } catch (error) {
-      throw new HttpException('Refresh token không hợp lệ', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'Refresh token không hợp lệ',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
   }
 }

@@ -11,6 +11,8 @@ import * as crypto from 'crypto';
 import { User, UserDocument } from '../user/schema/user.schema';
 import { CreateUserDto } from '../user/dto/user.dto';
 import { TokenKeyService } from './tokenKey.service';
+import axios from 'axios';
+import { LoginDto } from 'src/user/dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +24,7 @@ export class AuthService {
 
   // 🔹 Đăng ký người dùng
   async register(registerDto: CreateUserDto) {
-    const { email, password } = registerDto;
+    const { email, password, username } = registerDto;
 
     // Kiểm tra nếu email đã tồn tại
     if (await this.userModel.findOne({ email })) {
@@ -31,7 +33,6 @@ export class AuthService {
 
     // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
-    const username = email.split('@')[0];
 
     // Tạo người dùng
     const user = new this.userModel({ email, password: hashedPassword, username });
@@ -40,7 +41,7 @@ export class AuthService {
 
     // 🔹 Tạo và lưu khóa RSA
     const { publicKey, privateKey } = this.generateRSAKeys();
-    const tokens = await this.generateTokens(user, privateKey); // 🔹 Fix lỗi Promise
+    const tokens = await this.generateTokens(user, privateKey);
 
     await this.tokenKeyService.saveOrUpdateKeyPair(user._id.toString(), publicKey, privateKey, tokens.refreshToken);
 
@@ -48,7 +49,7 @@ export class AuthService {
   }
 
   // 🔹 Đăng nhập
-  async login(loginDto: CreateUserDto) {
+  async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
     // Kiểm tra người dùng có tồn tại
@@ -144,5 +145,44 @@ export class AuthService {
       { refreshToken },
       { $unset: { refreshToken: 1 } } 
     );
+  }
+
+  async validateGoogleUser(profile: any) {
+    const { id: googleId, email, name } = profile;
+  
+    let user = await this.userModel.findOne({ email });
+  
+    if (!user) {
+      await this.register({
+        email,
+        password: googleId,
+        username: name || email.split('@')[0],
+      });
+    }
+  
+    return this.login({ email, password: googleId });
+  }  
+
+  async exchangeGoogleCodeForTokens(code: string) {
+    const { data } = await axios.post(
+      'https://oauth2.googleapis.com/token',
+      {
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: 'http://localhost:3000/auth/google/callback',
+      }
+    );
+  
+    const googleUser = await this.getGoogleUserProfile(data.access_token);
+    return this.validateGoogleUser(googleUser);
+  }
+
+  async getGoogleUserProfile(accessToken: string) {
+    const { data } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return data;
   }
 }

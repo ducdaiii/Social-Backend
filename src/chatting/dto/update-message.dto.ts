@@ -1,10 +1,16 @@
-import { IsBoolean, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsArray } from 'class-validator';
 
 export class UpdateMessageDto {
   @IsOptional()
   @IsBoolean()
-  isRead?: boolean;
+  isRead?: boolean; 
 
-  @IsNotEmpty()
-  content: string;
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  seenBy?: string[]; 
+
+  @IsOptional()
+  @IsString()
+  content?: string; 
 }

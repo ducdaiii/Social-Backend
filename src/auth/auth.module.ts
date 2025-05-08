@@ -10,16 +10,18 @@ import { ConfigModule } from '../config/config.module';
 import { JwtService } from '@nestjs/jwt'; 
 import { TokenKeyService } from './tokenKey.service';
 import { TokenKey, TokenKeySchema } from './schema/tokenKey.schema';
+import { GoogleStrategy } from './strategies/google.strategy';
+
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([{ name: TokenKey.name, schema: TokenKeySchema }]),
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     forwardRef(() => ConfigModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, JwtService, TokenKeyService],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, JwtService, TokenKeyService, GoogleStrategy],
   exports: [AuthService, TokenKeyService]
 })
 export class AuthModule {}

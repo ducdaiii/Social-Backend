@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
 
 export class CreateMessageDto {
   @IsNotEmpty()
@@ -7,9 +7,21 @@ export class CreateMessageDto {
 
   @IsNotEmpty()
   @IsString()
-  receiver: string; 
+  chatId: string; 
 
   @IsNotEmpty()
+  @IsEnum(['User', 'Group'])
+  chatType: 'User' | 'Group'; 
+
+  @IsOptional()
   @IsString()
-  content: string;
+  content?: string; 
+
+  @IsOptional()
+  @IsEnum(['text', 'image', 'video', 'file'])
+  type?: 'text' | 'image' | 'video' | 'file'; 
+
+  @IsOptional()
+  @IsString()
+  fileUrl?: string; 
 }

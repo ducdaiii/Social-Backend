@@ -46,7 +46,7 @@ export class AuthMiddleware implements NestMiddleware {
         throw new ForbiddenException('User ID không trùng khớp');
       }
 
-      req.user = decoded.user;
+      req.user = decoded.sub;
       return next();
     } catch (error) {
       console.error(`Lỗi ${error.message}`);

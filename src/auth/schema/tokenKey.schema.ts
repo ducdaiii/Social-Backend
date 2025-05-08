@@ -8,10 +8,10 @@ export class TokenKey {
   @Prop({ required: true, unique: true })
   userId: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   publicKey: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   privateKey: string;
 
   @Prop({ required: true }) 

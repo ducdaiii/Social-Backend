@@ -14,6 +14,8 @@ import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
 import { EmptyDataMiddleware } from './middleware/datares.middleware';
 import { AuthMiddleware } from './middleware/auth.middleware';
+import { RedisService } from './redis/redis.service';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -27,16 +29,17 @@ import { AuthMiddleware } from './middleware/auth.middleware';
     RolesModule,
     PostsModule,
     CommentModule,
-    UserModule
+    UserModule,
+    RedisModule
   ],
   controllers: [AppController, AuthController],
-  providers: [AppService]
+  providers: [AppService, RedisService]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(EmptyDataMiddleware, AuthMiddleware)  
-      .exclude('auth/login', 'auth/register', "auth/logout", 'crypto/all', 'crypto/symbol')  
+      .exclude('auth/login', 'auth/register', "auth/logout", 'crypto/all', 'crypto/symbol', 'auth/google', 'auth/google/callback')  
       .forRoutes('*');     
   }
 }
