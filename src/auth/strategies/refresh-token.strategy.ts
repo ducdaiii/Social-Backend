@@ -6,12 +6,12 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from 'src/user/schema/user.schema';
 
 @Injectable()
-export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'refresh-token') {
+export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'refreshToken') {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromBodyField('refresh_token'), 
+      jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'), 
       secretOrKey: process.env.JWT_REFRESH_SECRET,
     });
   }

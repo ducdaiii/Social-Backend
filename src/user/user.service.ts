@@ -5,14 +5,12 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './schema/user.schema';
-import { Chat, ChatDocument } from '../chatting/schema/chat.schema';
 
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -61,19 +59,7 @@ export class UserService {
       await follower.save();
       await following.save();
   
-      // Kiểm tra nếu chưa có chat thì tạo mới
-      const existingChat = await this.chatModel.findOne({
-        type: 'private',
-        members: { $all: [followerId, followingId] },
-      });
-  
-      if (!existingChat) {
-        const newChat = await this.chatModel.create({
-          type: 'private',
-          members: [followerId, followingId],
-        });
-        console.log(`Created new chat for users: ${followerId} and ${followingId}`);
-      }
+      return following;
     }
   }  
 

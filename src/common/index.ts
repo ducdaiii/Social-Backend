@@ -5,7 +5,6 @@ export const HEADER = {
   };
 
 export enum ROLES {
-    Admin = "Admin",
-    Member = "Member",
-    Lead = "Lead"
+    Admin = "admin",
+    User = "user",
 }

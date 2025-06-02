@@ -12,6 +12,7 @@ import { User, UserDocument } from '../user/schema/user.schema';
 import { CreateUserDto } from '../user/dto/user.dto';
 import { TokenKeyService } from './tokenKey.service';
 import axios from 'axios';
+import { Request } from 'express';
 import { LoginDto } from 'src/user/dto/login.dto';
 
 @Injectable()
@@ -26,24 +27,28 @@ export class AuthService {
   async register(registerDto: CreateUserDto) {
     const { email, password, username } = registerDto;
 
-    // Kiểm tra nếu email đã tồn tại
     if (await this.userModel.findOne({ email })) {
       throw new UnauthorizedException('Email already exists');
     }
 
-    // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Tạo người dùng
-    const user = new this.userModel({ email, password: hashedPassword, username });
+    const user = new this.userModel({
+      email,
+      password: hashedPassword,
+      username,
+    });
     await user.save();
 
-
-    // 🔹 Tạo và lưu khóa RSA
     const { publicKey, privateKey } = this.generateRSAKeys();
     const tokens = await this.generateTokens(user, privateKey);
 
-    await this.tokenKeyService.saveOrUpdateKeyPair(user._id.toString(), publicKey, privateKey, tokens.refreshToken);
+    await this.tokenKeyService.saveOrUpdateKeyPair(
+      user._id.toString(),
+      publicKey,
+      privateKey,
+      tokens.refreshToken,
+    );
 
     return tokens;
   }
@@ -52,25 +57,27 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Kiểm tra người dùng có tồn tại
     const user = await this.userModel.findOne({ email });
     if (!user) throw new UnauthorizedException('Email không tồn tại');
 
-
-    // Kiểm tra mật khẩu
     if (!(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Mật khẩu không đúng');
     }
 
-    // 🔹 Lấy privateKey từ database
-    const keyData = await this.tokenKeyService.findKeyByUserId(user._id.toString());
-    if (!keyData) throw new UnauthorizedException('Không tìm thấy khóa bảo mật');
+    const keyData = await this.tokenKeyService.findKeyByUserId(
+      user._id.toString(),
+    );
+    if (!keyData)
+      throw new UnauthorizedException('Không tìm thấy khóa bảo mật');
 
-    // Tạo token
     const tokens = await this.generateTokens(user, keyData.privateKey);
 
-    // Cập nhật refreshToken
-    await this.tokenKeyService.saveOrUpdateKeyPair(user._id.toString(), keyData.publicKey, keyData.privateKey, tokens.refreshToken);
+    await this.tokenKeyService.saveOrUpdateKeyPair(
+      user._id.toString(),
+      keyData.publicKey,
+      keyData.privateKey,
+      tokens.refreshToken,
+    );
 
     return tokens;
   }
@@ -100,36 +107,39 @@ export class AuthService {
       const decoded = this.jwtService.decode(token) as { sub: string };
       if (!decoded?.sub) throw new UnauthorizedException('Token không hợp lệ');
 
-      // Lấy publicKey từ database
       const keyData = await this.tokenKeyService.findKeyByUserId(decoded.sub);
-      if (!keyData) throw new UnauthorizedException('Không tìm thấy khóa bảo mật');
+      if (!keyData)
+        throw new UnauthorizedException('Không tìm thấy khóa bảo mật');
 
       return this.jwtService.verify(token, { publicKey: keyData.publicKey });
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Token không hợp lệ hoặc đã hết hạn');
     }
   }
 
-  // 🔹 Lấy lại Access Token thông qua Refresh Token
+  // 🔹 Làm mới token
   async refreshTokens(refreshToken: string) {
     try {
       const decoded = await this.verifyAccessToken(refreshToken);
 
-      // Tìm user từ token
       const user = await this.userModel.findById(decoded.sub);
       if (!user) throw new NotFoundException('Người dùng không tồn tại');
 
-      // 🔹 Lấy privateKey từ database
-      const keyData = await this.tokenKeyService.findKeyByUserId(user._id.toString());
-      if (!keyData) throw new UnauthorizedException('Không tìm thấy khóa bảo mật');
+      const keyData = await this.tokenKeyService.findKeyByUserId(
+        user._id.toString(),
+      );
+      if (!keyData)
+        throw new UnauthorizedException('Không tìm thấy khóa bảo mật');
 
       return this.generateTokens(user, keyData.privateKey);
-    } catch (error) {
-      throw new UnauthorizedException('Refresh token không hợp lệ hoặc đã hết hạn');
+    } catch {
+      throw new UnauthorizedException(
+        'Refresh token không hợp lệ hoặc đã hết hạn',
+      );
     }
   }
 
-  // 🔹 Tạo cặp khóa RSA mới
+  // 🔹 Tạo cặp khóa RSA
   private generateRSAKeys() {
     const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
       modulusLength: 2048,
@@ -143,15 +153,16 @@ export class AuthService {
   async invalidateRefreshToken(refreshToken: string) {
     await this.userModel.updateOne(
       { refreshToken },
-      { $unset: { refreshToken: 1 } } 
+      { $unset: { refreshToken: 1 } },
     );
   }
 
+  // Đăng nhập Google
   async validateGoogleUser(profile: any) {
     const { id: googleId, email, name } = profile;
-  
+
     let user = await this.userModel.findOne({ email });
-  
+
     if (!user) {
       await this.register({
         email,
@@ -159,30 +170,107 @@ export class AuthService {
         username: name || email.split('@')[0],
       });
     }
-  
+
     return this.login({ email, password: googleId });
-  }  
+  }
 
   async exchangeGoogleCodeForTokens(code: string) {
-    const { data } = await axios.post(
-      'https://oauth2.googleapis.com/token',
-      {
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        code,
-        grant_type: 'authorization_code',
-        redirect_uri: 'http://localhost:3000/auth/google/callback',
-      }
-    );
-  
+    const { data } = await axios.post('https://oauth2.googleapis.com/token', {
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: 'http://localhost:3000/auth/google/callback',
+    });
+
     const googleUser = await this.getGoogleUserProfile(data.access_token);
     return this.validateGoogleUser(googleUser);
   }
 
   async getGoogleUserProfile(accessToken: string) {
-    const { data } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+    const { data } = await axios.get(
+      'https://www.googleapis.com/oauth2/v2/userinfo',
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+    return data;
+  }
+
+  // Đăng nhập GitHub
+  async exchangeGithubCodeForTokens(code: string) {
+    const { data } = await axios.post(
+      `https://github.com/login/oauth/access_token`,
+      {
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: 'http://localhost:3000/auth/github/callback',
+      },
+      { headers: { Accept: 'application/json' } },
+    );
+
+    const githubUser = await this.getGithubUserProfile(data.access_token);
+    return this.validateGithubUser(githubUser);
+  }
+
+  async getGithubUserProfile(accessToken: string) {
+    const { data } = await axios.get(`https://api.github.com/user`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     return data;
+  }
+
+  async validateGithubUser(profile: any) {
+    const { id: githubId, login, email } = profile;
+
+    // GitHub không luôn trả email, bạn cần lấy từ API riêng nếu cần
+    const resolvedEmail = email || `${login}@github.com`;
+
+    let user = await this.userModel.findOne({ email: resolvedEmail });
+
+    if (!user) {
+      await this.register({
+        email: resolvedEmail,
+        password: githubId,
+        username: login,
+      });
+    }
+
+    return this.login({ email: resolvedEmail, password: githubId });
+  }
+
+  async getCurrentUser(req: Request) {
+    const token = req.cookies?.accessToken;
+    if (!token) {
+      throw new UnauthorizedException('Không tìm thấy access token');
+    }
+
+    const decoded = this.jwtService.decode(token) as { sub: string };
+    if (!decoded?.sub) {
+      throw new UnauthorizedException('Token không hợp lệ');
+    }
+
+    const keyData = await this.tokenKeyService.findKeyByUserId(decoded.sub);
+    if (!keyData) {
+      throw new UnauthorizedException('Không tìm thấy khóa xác thực');
+    }
+
+    try {
+      const verified = this.jwtService.verify(token, {
+        publicKey: keyData.publicKey,
+      });
+      const user = await this.userModel
+        .findById(decoded.sub)
+        .select('-password');
+      if (!user) {
+        throw new NotFoundException('Người dùng không tồn tại');
+      }
+
+      return user;
+    } catch {
+      throw new UnauthorizedException('Token không hợp lệ hoặc đã hết hạn');
+    }
   }
 }

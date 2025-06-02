@@ -16,35 +16,4 @@ export class ConfigService {
   get jwtExpiresIn(): string {
     return this.configService.get<string>('JWT_EXPIRES_IN');
   }
-
-  // 📡 Crypto API
-  get cryptoApiUrl(): string {
-    return this.configService.get<string>('API_URL');
-  }
-
-  get cryptoApiKey(): string {
-    return this.configService.get<string>('API_KEY');
-  }
-
-  // 🔗 QuickNode
-  get quickNodeRpcUrl(): string {
-    return this.configService.get<string>('RPC_URL');
-  }
-
-  // 📈 Binance API
-  get binanceApiUrl(): string {
-    return this.configService.get<string>('BINANCE_API_URL');
-  }
-
-  get binanceApiKey(): string {
-    return this.configService.get<string>('API_BINANCE_KEY');
-  }
-
-  get binanceApiSecret(): string {
-    return this.configService.get<string>('API_BINANCE_SECRET');
-  }
-
-  get jwtRefreshExpiresIn(): string {
-    return this.configService.get<string>('JWT_REFRESH_EXPIRES_IN');
-  }
 }

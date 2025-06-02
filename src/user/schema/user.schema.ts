@@ -19,7 +19,7 @@ export class User {
   @Prop({ required: true, default: true })
   active: boolean;
 
-  @Prop({ required: false})
+  @Prop({ required: false })
   username: string;
 
   @Prop({ required: true })
@@ -28,10 +28,7 @@ export class User {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ unique: false })
-  walletAddress?: string;
-
-  @Prop({ type: String, enum: ROLES, default: ROLES.Member })
+  @Prop({ type: String, enum: ROLES, default: ROLES.User })
   role: ROLES;
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
@@ -39,6 +36,33 @@ export class User {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
   following: Types.ObjectId[];
+
+  @Prop({ required: false })
+  fullName: string;
+
+  @Prop({ required: false })
+  phoneNumber: string;
+
+  @Prop({ required: false })
+  bio: string;
+
+  @Prop({ type: String, enum: ['male', 'female', 'other'], required: false })
+  gender: 'male' | 'female' | 'other';
+
+  @Prop({ type: Date, required: false })
+  birthDate: Date;
+
+  @Prop({ required: false })
+  location: string;
+
+  @Prop({ type: [String], required: false })
+  socialLinks: string[];
+
+  @Prop({ required: false, default: false })
+  isBanned: boolean;
+
+  @Prop({ type: Date, required: false })
+  lastLogin: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

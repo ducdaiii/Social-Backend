@@ -1,7 +1,6 @@
 import { ForbiddenException, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { TokenKeyService } from '../auth/tokenKey.service';
-import { HEADER } from '../common/index';
 import * as jwt from 'jsonwebtoken';
 
 @Injectable()
@@ -13,9 +12,9 @@ export class AuthMiddleware implements NestMiddleware {
       let token: string | undefined;
       let tokenType: 'access' | 'refresh' | null = null;
 
-      // Kiểm tra xem có Access Token hay Refresh Token không
-      const accessToken = req.get(HEADER.AUTHORIZATION)?.split(' ')[1];
-      const refreshToken = req.get(HEADER.REFRESHTOKEN);
+      // Lấy token từ cookie
+      const accessToken = req.cookies?.accessToken;
+      const refreshToken = req.cookies?.refreshToken;
 
       if (accessToken) {
         token = accessToken;
@@ -26,31 +25,34 @@ export class AuthMiddleware implements NestMiddleware {
       }
 
       if (!token || !tokenType) {
-        throw new ForbiddenException('Thiếu Token');
+        return res.status(403).json({ message: 'Thiếu Token' });
       }
 
-      const userId = req.get(HEADER.CLIENT_ID);
-      if (!userId) {
-        throw new ForbiddenException('Thiếu Client ID');
+      // Giải mã token chưa verify để lấy userId
+      const decodedUnverified: any = jwt.decode(token);
+      if (!decodedUnverified?.sub) {
+        throw res.status(403).json({ message: 'Token không hợp lệ' });
       }
+      const userId = decodedUnverified.sub;
 
+      // Tìm keyStore dựa trên userId lấy được từ token
       const keyStore = await this.keyStoreService.findKeyByUserId(userId);
       if (!keyStore) {
-        throw new ForbiddenException('Không tìm thấy keystore');
+        throw res.status(403).json({ message: 'Không tìm thấy keystore' });
       }
-
+      // Xác thực token bằng publicKey
       const decoded: any = jwt.verify(token, keyStore.publicKey);
-      console.log('Decoded Token:', decoded);
 
+      // Nếu là refresh token, đảm bảo userId trùng khớp
       if (tokenType === 'refresh' && decoded.sub !== userId) {
-        throw new ForbiddenException('User ID không trùng khớp');
+        throw res.status(403).json({ message: 'User ID không trùng khớp' });
       }
 
       req.user = decoded.sub;
       return next();
     } catch (error) {
       console.error(`Lỗi ${error.message}`);
-      throw new ForbiddenException(`Lỗi Token: ${error.message}`);
+      return res.status(403).json({ message: `Lỗi Token: ${error.message}` });
     }
   }
 }

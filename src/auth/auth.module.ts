@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { TokenKeyService } from './tokenKey.service';
 import { TokenKey, TokenKeySchema } from './schema/tokenKey.schema';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { GithubStrategy } from './strategies/github.strategy';
 
 
 @Module({
@@ -21,7 +22,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     forwardRef(() => ConfigModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, JwtService, TokenKeyService, GoogleStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, JwtService, TokenKeyService, GoogleStrategy, GithubStrategy],
   exports: [AuthService, TokenKeyService]
 })
 export class AuthModule {}

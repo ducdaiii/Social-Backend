@@ -12,11 +12,16 @@ export class TokenKeyService {
     const keyStore = await this.tokenKeyModel.findOneAndUpdate(
       { userId },
       { publicKey, privateKey, refreshToken },
-      { new: true, upsert: true } // Tự động tạo mới nếu chưa tồn tại
+      { new: true, upsert: true } 
     );
 
     return { message: 'Lưu hoặc cập nhật khóa thành công', keyStore };
   }
+
+  // async getPublicKey(): Promise<string> {
+  //   const keyRecord = await this.tokenKeyModel.findOne({ type: 'public' });
+  //   return keyRecord?.publicKey || '';
+  // }
 
   // 🔹 Tìm khóa của một người dùng
   async findKeyByUserId(userId: string) {
