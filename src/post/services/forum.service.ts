@@ -17,10 +17,6 @@ export class ProjectForumService {
     return created.save();
   }
 
-  async findAll(): Promise<ProjectForum[]> {
-    return this.projectForumModel.find().exec();
-  }
-
   async findById(id: string): Promise<ProjectForum> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Invalid ID');
     const found = await this.projectForumModel.findById(id).exec();

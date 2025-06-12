@@ -10,7 +10,7 @@ import { Types } from 'mongoose';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
+  @Get('all')
   async findAll(): Promise<User[]> {
     return this.userService.findAll();
   }

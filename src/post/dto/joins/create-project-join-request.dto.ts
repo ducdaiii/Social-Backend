@@ -8,15 +8,10 @@ export class CreateProjectJoinRequestDto {
   @IsNotEmpty()
   project: Types.ObjectId;
 
-  @IsString()
   @IsNotEmpty()
-  profile: string;
+  role: string;
 
-  @IsEnum(['pending', 'approved', 'rejected'])
+  @IsEnum(['Pending', 'Approved', 'Rejected'])
   @IsOptional()
-  status?: 'pending' | 'approved' | 'rejected';
-
-  @IsString()
-  @IsOptional()
-  note?: string;
+  status?: 'Pending' | 'Approved' | 'Rejected';
 }

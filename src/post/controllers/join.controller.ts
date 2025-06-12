@@ -1,10 +1,19 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
+  Patch,
+} from '@nestjs/common';
 import { ProjectJoinRequestService } from '../services/join.service';
 import { CreateProjectJoinRequestDto } from '../dto/joins/create-project-join-request.dto';
 import { UpdateProjectJoinRequestDto } from '../dto/joins/update-project-join-request.dto';
 
-
-@Controller('project-join-requests')
+@Controller('join')
 export class ProjectJoinRequestController {
   constructor(private readonly service: ProjectJoinRequestService) {}
 
@@ -13,23 +22,18 @@ export class ProjectJoinRequestController {
     return this.service.create(createDto);
   }
 
-  @Get()
-  findAll() {
-    return this.service.findAll();
-  }
-
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findById(id);
+  async findOne(@Param('id') id: string) {
+    return await this.service.findById(id);
   }
 
-  @Put(':id')
-  update(@Param('id') id: string, @Body() updateDto: UpdateProjectJoinRequestDto) {
-    return this.service.update(id, updateDto);
+  @Patch(':id/approve')
+  approve(@Param('id') id: string) {
+    return this.service.approveJoinRequest(id);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  @Patch(':id/reject')
+  reject(@Param('id') id: string) {
+    return this.service.rejectJoinRequest(id);
   }
 }

@@ -9,16 +9,22 @@ import {
   UseGuards,
   Query,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../user/dto/user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Response, Request } from 'express';
 import { LoginDto } from 'src/user/dto/login.dto';
+import { TokenKeyService } from './tokenKey.service';
+import * as jwt from 'jsonwebtoken';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly keyStoreService: TokenKeyService,
+  ) {}
 
   @Get('me')
   async getProfile(@Req() req: Request) {
@@ -41,12 +47,8 @@ export class AuthController {
     return { message: 'Google login successful' };
   }
 
-  @Get('github')
-  @UseGuards(AuthGuard('github'))
-  async githubAuth() {}
-
   @Get('github/callback')
-  async githubAuthRedirect(
+  async githubCallback(
     @Query('code') code: string,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -55,12 +57,9 @@ export class AuthController {
 
       this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
-      return { message: 'GitHub login successful' };
-    } catch {
-      throw new HttpException(
-        'Đăng nhập GitHub thất bại',
-        HttpStatus.UNAUTHORIZED,
-      );
+      return { message: 'Authenticated successfully' }; 
+    } catch (error) {
+      throw new UnauthorizedException('GitHub auth failed');
     }
   }
 
@@ -90,10 +89,13 @@ export class AuthController {
 
   @Post('refresh')
   async refresh(
-    @Body() refreshDto: { refreshToken: string },
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { refreshToken } = refreshDto;
+    const refreshToken = req.cookies['refreshToken'];
+    if (!refreshToken) {
+      throw new UnauthorizedException('Thiếu refresh token');
+    }
 
     try {
       const tokens = await this.authService.refreshTokens(refreshToken);
@@ -119,6 +121,7 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 1000 * 60 * 15,
+      path: '/',
     });
 
     res.cookie('refreshToken', refreshToken, {
@@ -126,15 +129,30 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 7,
+      path: '/',
     });
   }
 
   @Post('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies['refreshToken'];
+
+    if (refreshToken) {
+      try {
+        // Giải mã lấy userId từ refreshToken (bạn dùng jwt.decode nhé)
+        const decoded: any = jwt.decode(refreshToken);
+        if (decoded?.sub) {
+          await this.keyStoreService.removeKey(decoded.sub);
+        }
+      } catch (e) {
+        console.warn('Không thể xóa keystore:', e.message);
+      }
+    }
+
     res.clearCookie('accessToken', {
       httpOnly: true,
-      secure: true, 
-      sameSite: 'lax', 
+      secure: true,
+      sameSite: 'lax',
     });
 
     res.clearCookie('refreshToken', {
@@ -143,6 +161,6 @@ export class AuthController {
       sameSite: 'lax',
     });
 
-    return { message: 'Logged out successfully' };
+    return { message: 'Đăng xuất thành công' };
   }
 }

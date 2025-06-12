@@ -16,6 +16,9 @@ export class TokenKey {
 
   @Prop({ required: true }) 
   refreshToken: string;
+
+  @Prop({ required: false }) 
+  githubAccessToken: string;
 }
 
 export const TokenKeySchema = SchemaFactory.createForClass(TokenKey);

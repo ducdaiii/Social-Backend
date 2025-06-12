@@ -13,6 +13,13 @@ export class User {
   })
   avatar: string;
 
+  @Prop({
+    required: false,
+    default:
+      'https://i.pinimg.com/736x/df/bd/84/dfbd8419494737ad5b129de7dec212f5.jpg',
+  })
+  background: string;
+
   @Prop({ required: true, default: false })
   verify: boolean;
 
@@ -38,7 +45,7 @@ export class User {
   following: Types.ObjectId[];
 
   @Prop({ required: false })
-  fullName: string;
+  nickname: string;
 
   @Prop({ required: false })
   phoneNumber: string;
@@ -60,6 +67,9 @@ export class User {
 
   @Prop({ required: false, default: false })
   isBanned: boolean;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'ProjectJoinRequest' }], default: [] })
+  projectSend: Types.ObjectId[];
 
   @Prop({ type: Date, required: false })
   lastLogin: Date;

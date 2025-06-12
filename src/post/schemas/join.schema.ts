@@ -12,13 +12,10 @@ export class ProjectJoinRequest {
   project: Types.ObjectId;
 
   @Prop({ required: true })
-  profile: string; 
+  role: string;
 
-  @Prop({ default: 'pending' })
-  status: 'pending' | 'approved' | 'rejected';
-
-  @Prop({ type: String, default: '' })
-  note?: string; 
+  @Prop({ default: 'Pending' })
+  status: 'Pending' | 'Approved' | 'Rejected';
 }
 
 export const ProjectJoinRequestSchema = SchemaFactory.createForClass(ProjectJoinRequest);

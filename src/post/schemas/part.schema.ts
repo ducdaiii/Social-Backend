@@ -20,13 +20,16 @@ export class Part {
   @Prop({ type: [String], default: [] })
   files: string[];
 
-  @Prop({ default: 'idea' })
-  status: 'idea' | 'in-progress' | 'completed';
+  @Prop({ default: 'Idea' })
+  status: 'Idea' | 'In-progress' | 'Completed';
+
+  @Prop({ required: true })
+  author: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Project' })
+  @Prop({ type: Types.ObjectId, ref: 'Post' })
   project: Types.ObjectId; 
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'ProjectProgressUpdate' }], default: [] })

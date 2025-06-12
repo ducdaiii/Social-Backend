@@ -32,20 +32,20 @@ export class CreatePartDto {
   @IsOptional()
   files?: string[];
 
-  @IsEnum(['idea', 'in-progress', 'completed'])
   @IsOptional()
-  status?: 'idea' | 'in-progress' | 'completed';
+  status?: string;
 
-  @IsMongoId()
+  @IsString()
+  @IsNotEmpty()
+  author: string;
+
   @IsOptional()
   createdBy?: Types.ObjectId;
 
-  @IsMongoId()
   @IsNotEmpty()
   project: Types.ObjectId;
 
   @IsArray()
-  @IsMongoId({ each: true })
   @IsOptional()
   progressUpdates?: Types.ObjectId[];
 }

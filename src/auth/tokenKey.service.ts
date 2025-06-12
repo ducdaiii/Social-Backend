@@ -5,23 +5,26 @@ import { TokenKey, TokenKeyDocument } from './schema/tokenKey.schema';
 
 @Injectable()
 export class TokenKeyService {
-  constructor(@InjectModel(TokenKey.name) private tokenKeyModel: Model<TokenKeyDocument>) {}
+  constructor(
+    @InjectModel(TokenKey.name) private tokenKeyModel: Model<TokenKeyDocument>,
+  ) {}
 
   // 🔹 Lưu mới hoặc cập nhật khóa RSA và Refresh Token
-  async saveOrUpdateKeyPair(userId: string, publicKey: string, privateKey: string, refreshToken: string) {
+  async saveOrUpdateKeyPair(
+    userId: string,
+    publicKey: string,
+    privateKey: string,
+    refreshToken: string,
+    githubAccessToken?: string,
+  ) {
     const keyStore = await this.tokenKeyModel.findOneAndUpdate(
       { userId },
-      { publicKey, privateKey, refreshToken },
-      { new: true, upsert: true } 
+      { publicKey, privateKey, refreshToken, githubAccessToken },
+      { new: true, upsert: true },
     );
 
     return { message: 'Lưu hoặc cập nhật khóa thành công', keyStore };
   }
-
-  // async getPublicKey(): Promise<string> {
-  //   const keyRecord = await this.tokenKeyModel.findOne({ type: 'public' });
-  //   return keyRecord?.publicKey || '';
-  // }
 
   // 🔹 Tìm khóa của một người dùng
   async findKeyByUserId(userId: string) {
@@ -56,5 +59,9 @@ export class TokenKeyService {
       throw new NotFoundException('Không tìm thấy khóa để xóa');
     }
     return { message: 'Xóa khóa thành công' };
+  }
+
+  async updateGithubAccessToken(userId: string, githubAccessToken: string) {
+    await this.tokenKeyModel.updateOne({ userId }, { githubAccessToken });
   }
 }

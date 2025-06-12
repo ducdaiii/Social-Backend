@@ -1,0 +1,16 @@
+<!-- templates/project-update.hbs -->
+<h2>📈 Dự án "{{projectName}}" đã được cập nhật</h2>
+
+<p>Xin chào,</p>
+
+<p>Một số thay đổi mới đã được áp dụng cho dự án bạn đang theo dõi:</p>
+
+<ul>
+  {{#each updatedFields}}
+    <li>✅ {{this}}</li>
+  {{/each}}
+</ul>
+
+<p>Hãy truy cập lại dự án để xem chi tiết.</p>
+
+<p>Trân trọng,<br/>Đội ngũ SWT</p>

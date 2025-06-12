@@ -20,7 +20,7 @@ export class Post {
   @Prop({ required: true })
   description: string;
 
-  @Prop({ type: [String], default: [] })
+  @Prop({ type: [String], default: ['https://i.pinimg.com/736x/9e/a5/e5/9ea5e5255688e5a7a3a9c6226d36139c.jpg'] })
   images: string[];
 
   @Prop({ type: [String], default: [] })
@@ -29,17 +29,17 @@ export class Post {
   @Prop({ type: [String], default: [] })
   files: string[];
 
-  @Prop({ default: 'idea' })
-  status: 'idea' | 'in-progress' | 'completed';
+  @Prop({ default: 'Idea' })
+  status: string;
 
-  @Prop({ default: 'remote' })
-  workingMode: 'remote' | 'onsite' | 'hybrid';
+  @Prop({ default: 'Remote' })
+  workingMode: string;
 
-  @Prop({ type: String, default: '' })
-  location?: string;
+  @Prop({ type: [String], default: [] })
+  location: string[];
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'ProjectRole' }], default: [] })
-  roles: Types.ObjectId[]; 
+  @Prop({ type: [String], default: [] })
+  roles: string[]; 
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Part' }], default: [] })
   parts: Types.ObjectId[]; 

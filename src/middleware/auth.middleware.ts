@@ -1,5 +1,5 @@
-import { ForbiddenException, Injectable, NestMiddleware } from '@nestjs/common';
-import { NextFunction, Request, Response } from 'express';
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
 import { TokenKeyService } from '../auth/tokenKey.service';
 import * as jwt from 'jsonwebtoken';
 
@@ -10,49 +10,65 @@ export class AuthMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     try {
       let token: string | undefined;
-      let tokenType: 'access' | 'refresh' | null = null;
+      let tokenType: 'accessToken' | 'refreshToken' | null = null;
 
-      // Lấy token từ cookie
       const accessToken = req.cookies?.accessToken;
       const refreshToken = req.cookies?.refreshToken;
 
       if (accessToken) {
         token = accessToken;
-        tokenType = 'access';
+        tokenType = 'accessToken';
       } else if (refreshToken) {
         token = refreshToken;
-        tokenType = 'refresh';
+        tokenType = 'refreshToken';
       }
 
       if (!token || !tokenType) {
-        return res.status(403).json({ message: 'Thiếu Token' });
+        return res.status(401).json({ message: 'missing token' });
       }
 
-      // Giải mã token chưa verify để lấy userId
-      const decodedUnverified: any = jwt.decode(token);
+      // Decode không verify để lấy userId
+      const decodedUnverified = jwt.decode(token) as jwt.JwtPayload;
       if (!decodedUnverified?.sub) {
-        throw res.status(403).json({ message: 'Token không hợp lệ' });
+        return res.status(401).json({ message: 'invalid token' });
       }
+
       const userId = decodedUnverified.sub;
 
-      // Tìm keyStore dựa trên userId lấy được từ token
+      // Lấy key từ DB theo userId
       const keyStore = await this.keyStoreService.findKeyByUserId(userId);
       if (!keyStore) {
-        throw res.status(403).json({ message: 'Không tìm thấy keystore' });
-      }
-      // Xác thực token bằng publicKey
-      const decoded: any = jwt.verify(token, keyStore.publicKey);
-
-      // Nếu là refresh token, đảm bảo userId trùng khớp
-      if (tokenType === 'refresh' && decoded.sub !== userId) {
-        throw res.status(403).json({ message: 'User ID không trùng khớp' });
+        return res.status(403).json({ message: 'keystore not found' });
       }
 
+      // Xác thực chữ ký token
+      let decoded: jwt.JwtPayload;
+      try {
+        decoded = jwt.verify(token, keyStore.publicKey) as jwt.JwtPayload;
+      } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+          return res.status(401).json({ message: 'jwt expired' });
+        } else if (err.name === 'JsonWebTokenError') {
+          return res.status(401).json({ message: 'invalid token' });
+        } else if (err.name === 'NotBeforeError') {
+          return res.status(401).json({ message: 'token not active yet' });
+        }
+
+        // Lỗi không xác định
+        return res.status(403).json({ message: 'token verification failed' });
+      }
+
+      // Kiểm tra sub trùng khớp
+      if (tokenType === 'refreshToken' && decoded.sub !== userId) {
+        return res.status(403).json({ message: 'user id mismatch' });
+      }
+
+      // Gắn thông tin user vào req
       req.user = decoded.sub;
-      return next();
-    } catch (error) {
-      console.error(`Lỗi ${error.message}`);
-      return res.status(403).json({ message: `Lỗi Token: ${error.message}` });
+      next();
+    } catch (error: any) {
+      console.error('Unexpected error in auth middleware:', error);
+      return res.status(500).json({ message: 'internal server error' });
     }
   }
 }

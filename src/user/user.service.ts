@@ -17,6 +17,23 @@ export class UserService {
     return this.userModel.find().exec();
   }
 
+  async addProjectToUser(
+      requestId: Types.ObjectId,
+      userId: Types.ObjectId,
+    ): Promise<void> {
+      if (!Types.ObjectId.isValid(requestId)) {
+        throw new NotFoundException('Invalid Post ID');
+      }
+  
+      await this.userModel
+        .findByIdAndUpdate(
+          userId,
+          { $addToSet: { projectSend: requestId } },
+          { new: true },
+        )
+        .exec();
+    }
+
   async findOne(id: string): Promise<User> {
     return this.userModel.findById(id).exec();
   }

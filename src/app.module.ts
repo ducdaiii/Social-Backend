@@ -16,7 +16,7 @@ import { ProjectModule } from './post/post.module';
   imports: [
     AuthModule,
     ConfigModule.forRoot({
-      isGlobal: true, 
+      isGlobal: true,
     }),
     DatabaseModule,
     UserModule,
@@ -25,13 +25,29 @@ import { ProjectModule } from './post/post.module';
     CommentModule,
   ],
   controllers: [AppController, AuthController],
-  providers: [AppService]
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(EmptyDataMiddleware, AuthMiddleware)  
-      .exclude('auth/login', 'auth/register', "auth/logout", 'auth/google', 'auth/google/callback', 'auth/github/callback', 'users', 'posts/random')
-      .forRoutes('*');     
+      .apply(EmptyDataMiddleware, AuthMiddleware)
+      .exclude(
+        'auth/login',
+        'auth/refresh',
+        'auth/register',
+        'auth/google',
+        'auth/github',
+        'auth/google/callback',
+        'auth/github/callback',
+        'users/:id',
+        'user/all',
+        'projects/:id',
+        'projects',
+        'parts/:id',
+        'projects/author/:id',
+        'projects/join/:id',
+        'join/:id'
+      )
+      .forRoutes('*');
   }
 }

@@ -1,22 +1,10 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Param, Body } from '@nestjs/common';
 import { ProjectForumService } from '../services/forum.service';
-import { CreateProjectForumDto } from '../dto/forum/create-project-forum.dto';
 import { UpdateProjectForumDto } from '../dto/forum/update-project-forum.dto';
-
 
 @Controller('project-forums')
 export class ProjectForumController {
   constructor(private readonly service: ProjectForumService) {}
-
-  @Post()
-  create(@Body() createDto: CreateProjectForumDto) {
-    return this.service.create(createDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.service.findAll();
-  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {

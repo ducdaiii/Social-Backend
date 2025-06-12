@@ -1,13 +1,18 @@
-import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString, IsMongoId } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsMongoId,
+} from 'class-validator';
 import { Types } from 'mongoose';
 
 export class CreatePostDto {
-  @IsMongoId()
   @IsNotEmpty()
   author: Types.ObjectId;
 
-  @IsArray()
-  @IsMongoId({ each: true })
   @IsOptional()
   members?: Types.ObjectId[];
 
@@ -15,63 +20,73 @@ export class CreatePostDto {
   @IsNotEmpty()
   title: string;
 
-  @IsArray()
   @IsString({ each: true })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
+  })
   tags?: string[];
 
   @IsString()
   @IsNotEmpty()
   description: string;
 
-  @IsArray()
   @IsString({ each: true })
   @IsOptional()
   images?: string[];
 
-  @IsArray()
   @IsString({ each: true })
   @IsOptional()
   videos?: string[];
 
-  @IsArray()
   @IsString({ each: true })
   @IsOptional()
   files?: string[];
 
-  @IsEnum(['idea', 'in-progress', 'completed'])
   @IsOptional()
-  status?: 'idea' | 'in-progress' | 'completed';
+  status?: string;
 
-  @IsEnum(['remote', 'onsite', 'hybrid'])
   @IsOptional()
-  workingMode?: 'remote' | 'onsite' | 'hybrid';
+  workingMode?: string;
 
-  @IsString()
+  @IsString({ each: true })
   @IsOptional()
-  location?: string;
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
+  })
+  location?: string[];
 
-  @IsArray()
-  @IsMongoId({ each: true })
+  @IsString({ each: true })
   @IsOptional()
-  roles?: Types.ObjectId[];
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
+  })
+  roles?: string[];
 
-  @IsArray()
-  @IsMongoId({ each: true })
   @IsOptional()
   parts?: Types.ObjectId[];
 
-  @IsArray()
-  @IsMongoId({ each: true })
   @IsOptional()
   joinRequests?: Types.ObjectId[];
 
-  @IsArray()
-  @IsMongoId({ each: true })
   @IsOptional()
   contributions?: Types.ObjectId[];
 
-  @IsMongoId()
   @IsOptional()
   forum?: Types.ObjectId;
 }

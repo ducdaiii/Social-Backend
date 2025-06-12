@@ -12,6 +12,7 @@ import { TokenKeyService } from './tokenKey.service';
 import { TokenKey, TokenKeySchema } from './schema/tokenKey.schema';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { GithubStrategy } from './strategies/github.strategy';
+import { MailModule } from 'src/mail/mail.module';
 
 
 @Module({
@@ -20,6 +21,7 @@ import { GithubStrategy } from './strategies/github.strategy';
     MongooseModule.forFeature([{ name: TokenKey.name, schema: TokenKeySchema }]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     forwardRef(() => ConfigModule),
+    MailModule
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy, JwtService, TokenKeyService, GoogleStrategy, GithubStrategy],
